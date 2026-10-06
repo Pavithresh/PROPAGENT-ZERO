@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Analytics Dashboard — PROPAGENT ZERO{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">
+    <h2><span>📊</span> Analytics Dashboard</h2>
+    <p>Fraud alert trends, risk distribution, and scam reports. Admin only.</p>
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px;">
+  <div class="card" style="padding: 16px; text-align: center;">
+    <div style="font-size: 28px; font-weight: 800; color: var(--accent-cyan);">{{ total_props }}</div>
+    <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Total Properties</div>
+  </div>
+  <div class="card" style="padding: 16px; text-align: center;">
+    <div style="font-size: 28px; font-weight: 800; color: #f87171;">{{ total_alerts }}</div>
+    <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Total Risk Alerts</div>
+  </div>
+  <div class="card" style="padding: 16px; text-align: center;">
+    <div style="font-size: 28px; font-weight: 800; color: #fbbf24;">{{ scam_reports|length }}</div>
+    <div style="font-size: 11px; text-transform: uppercase; color: var(--text-muted);">Scam Reports</div>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-bottom: 24px;">
+  <div class="card">
+    <div class="card-header"><h3><span>📈</span> Alerts by Month</h3></div>
+    <div style="padding: 16px;"><canvas id="chartMonthly" height="200"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3><span>🎯</span> Risk Level Distribution</h3></div>
+    <div style="padding: 16px;"><canvas id="chartLevel" height="200"></canvas></div>
+  </div>
+</div>
+
+<!-- Scam Reports Table -->
+<div class="card">
+  <div class="card-header">
+    <h3><span>🚨</span> Recent Scam Reports</h3>
+    <span class="badge badge-high-risk">{{ scam_reports|length }} reports</span>
+  </div>
+  {% if scam_reports %}
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead><tr><th>Property</th><th>Owner</th><th>Reported By</th><th>Reason</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for r in scam_reports %}
+        <tr>
+          <td><a href="{{ url_for('property_passport', property_id=r.property_id) }}" style="color: var(--accent-cyan);">{{ r.property_id }}</a></td>
+          <td>{{ r.owner_name or '—' }}</td>
+          <td>{{ r.reported_by }}</td>
+          <td style="max-width: 300px; word-break: break-word; font-size: 12px;">{{ r.reason }}</td>
+          <td>{{ r.created_at[:16] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="padding: 30px; text-align: center; color: var(--text-muted);">No scam reports filed.</div>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const months = {{ by_month | map(attribute='month') | list | tojson }};
+const monthCounts = {{ by_month | map(attribute='count') | list | tojson }};
+const levels = {{ by_level | map(attribute='risk_level') | list | tojson }};
+const levelCounts = {{ by_level | map(attribute='count') | list | tojson }};
+
+new Chart(document.getElementById('chartMonthly'), {
+  type: 'bar',
+  data: {
+    labels: months,
+    datasets: [{ label: 'Risk Alerts', data: monthCounts, backgroundColor: '#ef4444', borderRadius: 4 }]
+  },
+  options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }, y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } } } }
+});
+
+const levelColors = { 'Low Risk': '#34d399', 'Medium Risk': '#fbbf24', 'High Risk': '#f97316', 'Critical Risk': '#ef4444' };
+new Chart(document.getElementById('chartLevel'), {
+  type: 'doughnut',
+  data: {
+    labels: levels,
+    datasets: [{ data: levelCounts, backgroundColor: levels.map(l => levelColors[l] || '#64748b'), borderWidth: 0 }]
+  },
+  options: { plugins: { legend: { labels: { color: '#94a3b8' } } } }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Stamp Duty & Registration Fee Calculator — PROPAGENT ZERO{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-title">
+    <h2><span>🧮</span> Stamp Duty & Registration Fee Calculator</h2>
+    <p>Estimate stamp duty and registration fees for Tamil Nadu property transactions. Rates are indicative only.</p>
+  </div>
+  <a href="{{ url_for('dashboard') }}" class="btn btn-secondary"><span>📊</span> Dashboard</a>
+</div>
+
+<div style="max-width: 640px; margin: 0 auto;">
+  <div class="card">
+    <div class="card-header">
+      <h3><span>📝</span> Enter Property Details</h3>
+      <span class="badge badge-neutral">Tamil Nadu (TN) Rates</span>
+    </div>
+    <form method="POST" action="{{ url_for('stamp_duty_calculator') }}" style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div>
+        <label style="font-size: 12.5px; color: var(--text-secondary); display: block; margin-bottom: 6px; font-weight: 500;">Property Sale Price (₹) *</label>
+        <input type="number" name="price" class="form-control" placeholder="e.g. 5000000" value="{{ price }}" required min="1" step="1">
+      </div>
+
+      <div>
+        <label style="font-size: 12.5px; color: var(--text-secondary); display: block; margin-bottom: 6px; font-weight: 500;">State</label>
+        <select name="state" class="form-control">
+          <option value="TN" {% if state == 'TN' %}selected{% endif %}>Tamil Nadu (TN)</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="font-size: 12.5px; color: var(--text-secondary); display: block; margin-bottom: 6px; font-weight: 500;">Buyer Gender</label>
+        <select name="buyer_gender" class="form-control">
+          <option value="male" {% if buyer_gender == 'male' %}selected{% endif %}>Male</option>
+          <option value="female" {% if buyer_gender == 'female' %}selected{% endif %}>Female (2% stamp duty concession in TN)</option>
+          <option value="joint" {% if buyer_gender == 'joint' %}selected{% endif %}>Joint</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Calculate Fees</button>
+    </form>
+
+    {% if result %}
+    <div style="padding: 20px; border-top: 1px solid var(--border-color);">
+      <div style="font-size: 11px; text-transform: uppercase; color: var(--accent-cyan); font-weight: 700; letter-spacing: 0.6px; margin-bottom: 14px;">Estimated Fees</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="background: #0d1627; padding: 12px; border-radius: var(--radius-sm);">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Sale Price</div>
+          <div style="font-size: 18px; font-weight: 800; color: #fff; margin-top: 4px;">₹{{ "{:,.0f}".format(result.price) }}</div>
+        </div>
+        <div style="background: #0d1627; padding: 12px; border-radius: var(--radius-sm);">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Stamp Duty ({{ result.stamp_rate_pct }}%)</div>
+          <div style="font-size: 18px; font-weight: 800; color: #fbbf24; margin-top: 4px;">₹{{ "{:,.0f}".format(result.stamp_duty) }}</div>
+        </div>
+        <div style="background: #0d1627; padding: 12px; border-radius: var(--radius-sm);">
+          <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Registration Fee (1%)</div>
+          <div style="font-size: 18px; font-weight: 800; color: #fbbf24; margin-top: 4px;">₹{{ "{:,.0f}".format(result.registration_fee) }}</div>
+        </div>
+        <div style="background: #091322; border: 1px solid var(--accent-cyan); padding: 12px; border-radius: var(--radius-sm);">
+          <div style="font-size: 11px; color: var(--accent-cyan); text-transform: uppercase; font-weight: 700;">Total Government Fees</div>
+          <div style="font-size: 22px; font-weight: 800; color: #34d399; margin-top: 4px;">₹{{ "{:,.0f}".format(result.total) }}</div>
+        </div>
+      </div>
+      <p style="font-size: 11.5px; color: var(--text-muted); margin-top: 14px;">⚠ Indicative only. Actual rates may vary. Consult a registered sub-registrar or legal advisor.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

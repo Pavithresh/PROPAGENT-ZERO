@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Property Map — PROPAGENT ZERO{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-title">
+    <h2><span>🗺️</span> Property Risk Map</h2>
+    <p>All registered properties plotted by location. Colour = risk level: <span style="color:#34d399">■ Low</span> <span style="color:#fbbf24">■ Medium</span> <span style="color:#f97316">■ High</span> <span style="color:#ef4444">■ Critical</span></p>
+  </div>
+</div>
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div id="risk-map" style="width: 100%; height: 560px; background: #0b1322;"></div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const mapEl = document.getElementById('risk-map');
+const map = L.map(mapEl).setView([13.0827, 80.2707], 8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors', maxZoom: 18
+}).addTo(map);
+
+const props = {{ properties | tojson }};
+props.forEach(function(p) {
+  if (!p.latitude || !p.longitude) return;
+  let color = '#34d399';
+  if (p.risk_score >= 80) color = '#ef4444';
+  else if (p.risk_score >= 60) color = '#f97316';
+  else if (p.risk_score >= 30) color = '#fbbf24';
+  const circle = L.circleMarker([p.latitude, p.longitude], {
+    radius: 8, fillColor: color, color: '#fff', weight: 1.5, opacity: 0.9, fillOpacity: 0.85
+  });
+  circle.bindPopup(
+    '<div style="font-family:sans-serif;min-width:180px;">' +
+    '<strong>' + p.property_id + '</strong><br>' +
+    (p.owner_name || '') + '<br>' +
+    '<span style="color:' + color + ';font-weight:700;">Risk: ' + p.risk_score + ' / 100 (' + p.risk_level + ')</span><br>' +
+    (p.address || p.village || '') + ', ' + (p.district || '') +
+    '<br><a href="/property/' + p.property_id + '/passport" style="color:#38bdf8;">View Passport →</a>' +
+    '</div>'
+  );
+  circle.addTo(map);
+});
+</script>
+{% endblock %}
